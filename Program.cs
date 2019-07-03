@@ -12,7 +12,6 @@ namespace CancellationTokenTest
         {
             await tryMultipleTask(3);
         }
-
         private static async Task tryMultipleTask(int taskNumber)
         {
             var tokenSource = new CancellationTokenSource();
@@ -34,7 +33,7 @@ namespace CancellationTokenTest
                 tasks.Add(new RandomGenerator(i.ToString()).CreateTask(token));
             var exceptionCreator = new ExceptionGenerator();
             tasks.Add(exceptionCreator.CreateTask<ArgumentNullException>(nameof(taskNumber)));
-            tasks.Add(exceptionCreator.CreateTask<ArgumentException>("okearg"));
+            tasks.Add(exceptionCreator.CreateTask<NotImplementedException>("A method is yet implemented."));
             var allTasks = Task.WhenAll(tasks.ToArray());
             await tryCancellableTask(allTasks);
             Console.WriteLine($"Task end status : {allTasks.Status}");
@@ -72,12 +71,24 @@ namespace CancellationTokenTest
             }
             catch (OperationCanceledException) {
                 Console.WriteLine("OperationCanceledException caught...");
-                Console.WriteLine($"Task.Exception is \"{task.Exception?.Message ?? "null"}\"");
             }
             catch (TimeoutException) {
                 Console.WriteLine("TimeoutException caught...");
-                Console.WriteLine($"Task.Exception is \"{task.Exception?.Message ?? "null"}\"");
             }
+            catch (Exception) {
+                Console.WriteLine("Unknown Exceptions caught");
+            }
+            showTaskException(task.Exception);
+        }
+
+        private static void showTaskException(AggregateException age) 
+        {
+            Console.WriteLine("Task.Exception includes [");
+            age?.Handle(e => {
+                Console.WriteLine($"{{ {e.Message} }}"); 
+                return true;
+            });
+            Console.WriteLine("]");
         }
     }
 }
